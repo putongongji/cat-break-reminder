@@ -1,0 +1,54 @@
+{
+  "name": "cat-break-reminder",
+  "version": "0.1.0",
+  "description": "A cross-platform desktop break reminder with a walking orange cat overlay.",
+  "main": "src/main.js",
+  "private": true,
+  "scripts": {
+    "generate-assets": "node scripts/generate-cat-gifs.js",
+    "check": "node scripts/check-syntax.js",
+    "test": "node --test",
+    "verify": "npm run generate-assets && npm run check && npm test",
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "electron",
+    "break",
+    "pomodoro",
+    "cat"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.local.catbreakreminder",
+    "productName": "Cat Break Reminder",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
