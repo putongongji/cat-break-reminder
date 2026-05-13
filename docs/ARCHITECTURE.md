@@ -4,12 +4,16 @@ Cat Break Reminder is a small Electron app with three layers.
 
 ## Main Process
 
-`src/main.js`
+`src/main.js` and `src/main/`
 
 - owns app lifecycle, tray/menu bar, IPC, and Electron windows
 - creates the normal settings window and the full-screen transparent break window
-- copies imported cat media into Electron's user data folder
 - stores settings and active usage state on disk
+
+Main helpers:
+
+- `src/main/cat-assets.js`: validates, copies, and exposes imported cat media
+- `src/main/usage-store.js`: saves and restores active usage seconds with stale-entry handling
 
 ## Core Modules
 

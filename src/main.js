@@ -1,21 +1,23 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, screen, dialog, powerMonitor } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { pathToFileURL } = require('url');
 const {
   DEFAULT_SETTINGS,
-  DEFAULT_ASSET_SOURCES,
-  CAT_ASSET_ROLES,
-  CAT_ASSET_EXTENSIONS,
-  USAGE_STALE_AFTER_MS,
   USAGE_SAVE_INTERVAL_SECONDS,
   IDLE_IGNORE_AFTER_SECONDS
 } = require('./core/constants');
-const { normalizeSettings, getAssetKind } = require('./core/settings');
+const { normalizeSettings } = require('./core/settings');
 const { ActiveUsageClock } = require('./core/active-usage-clock');
-
-const catAssetRoles = new Set(CAT_ASSET_ROLES);
-const catAssetExtensions = new Set(CAT_ASSET_EXTENSIONS);
+const {
+  assertCatAssetRole,
+  catAssetDialogExtensions,
+  copyCatAsset,
+  publicCatAsset
+} = require('./main/cat-assets');
+const {
+  loadUsageSeconds: loadUsageSecondsFromStore,
+  saveUsageSeconds: saveUsageSecondsToStore
+} = require('./main/usage-store');
 
 let mainWindow = null;
 let tray = null;
@@ -48,10 +50,6 @@ function getSettingsPath() {
   return path.join(app.getPath('userData'), 'settings.json');
 }
 
-function getUsagePath() {
-  return path.join(app.getPath('userData'), 'usage.json');
-}
-
 function loadSettings() {
   try {
     const raw = fs.readFileSync(getSettingsPath(), 'utf8');
@@ -70,29 +68,13 @@ function saveSettings() {
 }
 
 function loadUsageSeconds() {
-  try {
-    const entry = JSON.parse(fs.readFileSync(getUsagePath(), 'utf8'));
-    const now = Date.now();
-    if (now - Number(entry.updatedAt || 0) > USAGE_STALE_AFTER_MS) {
-      usageClock.setUsageSeconds(0);
-      state.usageSeconds = 0;
-      return;
-    }
-    usageClock.setUsageSeconds(entry.seconds);
-    state.usageSeconds = usageClock.usageSeconds;
-  } catch {
-    usageClock.setUsageSeconds(0);
-    state.usageSeconds = 0;
-  }
+  usageClock.setUsageSeconds(loadUsageSecondsFromStore(app.getPath('userData')));
+  state.usageSeconds = usageClock.usageSeconds;
 }
 
 function saveUsageSeconds() {
   const snapshot = usageClock.snapshot();
-  fs.mkdirSync(app.getPath('userData'), { recursive: true });
-  fs.writeFileSync(getUsagePath(), JSON.stringify({
-    seconds: Math.max(0, snapshot.usageSeconds),
-    updatedAt: Date.now()
-  }, null, 2));
+  saveUsageSecondsToStore(app.getPath('userData'), snapshot.usageSeconds);
 }
 
 function resetUsageSeconds() {
@@ -128,34 +110,8 @@ function publicState() {
 
 function getPublicCatAssets() {
   return {
-    walk: publicCatAsset('walk'),
-    rest: publicCatAsset('rest')
-  };
-}
-
-function publicCatAsset(role) {
-  const assetPath = settings.catAssets?.[role];
-  if (!assetPath || !fs.existsSync(assetPath)) {
-    return {
-      src: DEFAULT_ASSET_SOURCES[role],
-      name: role === 'walk' ? 'Default walking cat' : 'Default resting cat',
-      kind: 'image',
-      custom: false
-    };
-  }
-
-  const fileUrl = pathToFileURL(assetPath);
-  try {
-    fileUrl.searchParams.set('v', String(Math.round(fs.statSync(assetPath).mtimeMs)));
-  } catch {
-    fileUrl.searchParams.set('v', String(Date.now()));
-  }
-
-  return {
-    src: fileUrl.href,
-    name: path.basename(assetPath),
-    kind: getAssetKind(assetPath),
-    custom: true
+    walk: publicCatAsset({ role: 'walk', assetPath: settings.catAssets?.walk }),
+    rest: publicCatAsset({ role: 'rest', assetPath: settings.catAssets?.rest })
   };
 }
 
@@ -357,18 +313,12 @@ function applyLoginSetting() {
   }
 }
 
-function getCatAssetDir() {
-  return path.join(app.getPath('userData'), 'cat-assets');
-}
-
 function assetLabel(role) {
   return role === 'walk' ? 'walking cat material' : 'resting cat material';
 }
 
 async function importCatAsset(role) {
-  if (!catAssetRoles.has(role)) {
-    throw new Error(`Unsupported cat asset role: ${role}`);
-  }
+  assertCatAssetRole(role);
 
   const dialogOptions = {
     title: `Choose ${assetLabel(role)}`,
@@ -376,7 +326,7 @@ async function importCatAsset(role) {
     filters: [
       {
         name: 'Cat images and animations',
-        extensions: ['gif', 'png', 'apng', 'webp', 'jpg', 'jpeg', 'webm', 'mp4', 'm4v', 'ogv', 'ogg']
+        extensions: catAssetDialogExtensions()
       }
     ]
   };
@@ -389,16 +339,11 @@ async function importCatAsset(role) {
     return publicState();
   }
 
-  const sourcePath = result.filePaths[0];
-  const extension = path.extname(sourcePath).toLowerCase();
-  if (!catAssetExtensions.has(extension)) {
-    throw new Error('Unsupported file type. Use GIF, APNG, WebP, PNG, JPG, WebM, or MP4.');
-  }
-
-  const assetDir = getCatAssetDir();
-  fs.mkdirSync(assetDir, { recursive: true });
-  const destinationPath = path.join(assetDir, `cat-${role}${extension}`);
-  fs.copyFileSync(sourcePath, destinationPath);
+  const destinationPath = copyCatAsset({
+    sourcePath: result.filePaths[0],
+    role,
+    userDataPath: app.getPath('userData')
+  });
 
   settings = normalizeSettings({
     ...settings,
@@ -415,9 +360,7 @@ async function importCatAsset(role) {
 }
 
 function resetCatAsset(role) {
-  if (!catAssetRoles.has(role)) {
-    throw new Error(`Unsupported cat asset role: ${role}`);
-  }
+  assertCatAssetRole(role);
 
   settings = normalizeSettings({
     ...settings,
