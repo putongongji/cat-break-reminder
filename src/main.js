@@ -43,6 +43,7 @@ let usageSecondsSinceSave = 0;
 const gotLock = app.requestSingleInstanceLock();
 
 if (!gotLock) {
+  console.log('Another Cat Break Reminder instance is already running.');
   app.quit();
 }
 
