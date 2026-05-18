@@ -124,6 +124,7 @@ function broadcastState() {
     }
   }
   updateTrayMenu();
+  createApplicationMenu();
 }
 
 function scheduleNextReminder(from = Date.now()) {
@@ -169,9 +170,9 @@ function startTicking() {
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 420,
-    height: 720,
+    height: 820,
     minWidth: 360,
-    minHeight: 620,
+    minHeight: 680,
     show: false,
     title: 'Cat Break Reminder',
     backgroundColor: '#fff8ee',
@@ -187,12 +188,14 @@ function createMainWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    if (!settings.startMinimized) {
+      mainWindow.show();
+    }
     broadcastState();
   });
 
   mainWindow.on('close', (event) => {
-    if (!isQuitting) {
+    if (!isQuitting && settings.closeToTray) {
       event.preventDefault();
       mainWindow.hide();
     }
@@ -207,6 +210,18 @@ function showMainWindow() {
   mainWindow.show();
   mainWindow.focus();
   broadcastState();
+}
+
+function hideMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide();
+  }
+}
+
+function quitApp() {
+  isQuitting = true;
+  saveUsageSeconds();
+  app.quit();
 }
 
 function createOverlayWindow(display) {
@@ -408,7 +423,8 @@ function updateTrayMenu() {
   tray.setContextMenu(Menu.buildFromTemplate([
     { label, enabled: false },
     { type: 'separator' },
-    { label: 'Show', click: showMainWindow },
+    { label: 'Show Window', click: showMainWindow },
+    { label: 'Hide Window', click: hideMainWindow },
     {
       label: state.running ? 'Pause' : 'Resume',
       click: () => setRunning(!state.running)
@@ -423,11 +439,8 @@ function updateTrayMenu() {
     },
     { type: 'separator' },
     {
-      label: 'Quit',
-      click: () => {
-        isQuitting = true;
-        app.quit();
-      }
+      label: 'Quit Cat Break Reminder',
+      click: quitApp
     }
   ]));
 }
@@ -436,6 +449,30 @@ function createTray() {
   tray = new Tray(trayIcon());
   tray.on('click', showMainWindow);
   updateTrayMenu();
+}
+
+function createApplicationMenu() {
+  const template = [
+    {
+      label: 'Cat Break Reminder',
+      submenu: [
+        { label: 'Show Window', accelerator: 'CmdOrCtrl+,', click: showMainWindow },
+        { label: 'Hide Window', accelerator: 'CmdOrCtrl+H', click: hideMainWindow },
+        { type: 'separator' },
+        {
+          label: state.running ? 'Pause Timer' : 'Resume Timer',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => setRunning(!state.running)
+        },
+        { label: 'Reset Timer', accelerator: 'CmdOrCtrl+R', click: () => scheduleNextReminder() },
+        { label: 'Test Reminder', accelerator: 'CmdOrCtrl+T', click: showBreakOverlay },
+        { type: 'separator' },
+        { label: 'Quit', accelerator: 'CmdOrCtrl+Q', click: quitApp }
+      ]
+    }
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 function registerIpc() {
@@ -458,6 +495,16 @@ function registerIpc() {
 
   ipcMain.handle('timer:test', () => {
     showBreakOverlay();
+    return publicState();
+  });
+
+  ipcMain.handle('window:hide', () => {
+    hideMainWindow();
+    return publicState();
+  });
+
+  ipcMain.handle('app:quit', () => {
+    quitApp();
     return publicState();
   });
 
@@ -502,6 +549,7 @@ app.whenReady().then(() => {
     applyLoginSetting();
   }
   createTray();
+  createApplicationMenu();
   createMainWindow();
   startTicking();
 });

@@ -15,6 +15,8 @@ screen edge toward the center, then lies down for the break.
 - Import your own walking and resting cat image/animation assets
 - Optional launch-at-login
 - Optional multi-display overlay
+- Configurable close behavior: hide to background or quit
+- In-app Hide and Quit controls
 - Tray/menu-bar controls for background use
 
 ## Run Locally
@@ -70,5 +72,6 @@ the resting material.
 ## Notes
 
 - The app stays in the tray/menu bar when the main window is closed.
+- Use `Quit` in the app, tray/menu bar, or application menu to fully stop it.
 - Press `Esc` or click `Skip` to dismiss the break overlay early.
 - Settings are stored in Electron's app data folder for the current OS user.

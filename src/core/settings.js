@@ -20,6 +20,8 @@ function normalizeSettings(next = {}, { fileExists = () => false } = {}) {
     breakSeconds: clampNumber(next.breakSeconds, 10, 1800, DEFAULT_SETTINGS.breakSeconds),
     launchAtLogin: Boolean(next.launchAtLogin),
     showOnAllDisplays: Boolean(next.showOnAllDisplays),
+    closeToTray: typeof next.closeToTray === 'boolean' ? next.closeToTray : DEFAULT_SETTINGS.closeToTray,
+    startMinimized: Boolean(next.startMinimized),
     catAssets: normalizeCatAssets(next.catAssets, { fileExists })
   };
 }

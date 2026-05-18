@@ -3,6 +3,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   breakSeconds: 75,
   launchAtLogin: false,
   showOnAllDisplays: true,
+  closeToTray: true,
+  startMinimized: false,
   catAssets: {
     walk: null,
     rest: null

@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('catBreak', {
   resume: () => ipcRenderer.invoke('timer:resume'),
   reset: () => ipcRenderer.invoke('timer:reset'),
   test: () => ipcRenderer.invoke('timer:test'),
+  hideWindow: () => ipcRenderer.invoke('window:hide'),
+  quit: () => ipcRenderer.invoke('app:quit'),
   dismissBreak: () => ipcRenderer.invoke('break:dismiss'),
   updateSettings: (settings) => ipcRenderer.invoke('settings:update', settings),
   importCatAsset: (role) => ipcRenderer.invoke('asset:importCat', role),

@@ -20,6 +20,8 @@ test('normalizeSettings applies conservative defaults and ranges', () => {
     breakSeconds: 9999,
     launchAtLogin: 1,
     showOnAllDisplays: '',
+    closeToTray: false,
+    startMinimized: true,
     catAssets: {
       walk: '/tmp/cat.webm',
       rest: '/tmp/cat.txt'
@@ -32,6 +34,8 @@ test('normalizeSettings applies conservative defaults and ranges', () => {
   assert.equal(settings.breakSeconds, 1800);
   assert.equal(settings.launchAtLogin, true);
   assert.equal(settings.showOnAllDisplays, false);
+  assert.equal(settings.closeToTray, false);
+  assert.equal(settings.startMinimized, true);
   assert.equal(settings.catAssets.walk, '/tmp/cat.webm');
   assert.equal(settings.catAssets.rest, null);
 });

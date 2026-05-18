@@ -173,6 +173,16 @@ button:active {
   background: rgba(15, 45, 47, 0.06);
 }
 
+.danger {
+  color: #fff;
+  background: #8f2d24;
+  box-shadow: 0 12px 22px rgba(143, 45, 36, 0.18);
+}
+
+.danger:hover {
+  background: #a33a2f;
+}
+
 button:disabled {
   cursor: default;
   opacity: 0.46;
@@ -279,6 +289,27 @@ input[type="checkbox"] {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.app-actions {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(15, 45, 47, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.app-actions p {
+  margin: 0 0 12px;
+  color: #5d6d6a;
+  font-size: 0.86rem;
+  font-weight: 680;
+}
+
+.app-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .overlay-body {

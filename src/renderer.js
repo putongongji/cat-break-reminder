@@ -132,6 +132,14 @@ function renderMainShell() {
           <input id="launchAtLogin" type="checkbox" />
           <span>Launch when computer starts</span>
         </label>
+        <label class="switch-row">
+          <input id="startMinimized" type="checkbox" />
+          <span>Start in background</span>
+        </label>
+        <label class="switch-row">
+          <input id="closeToTray" type="checkbox" />
+          <span>Closing window keeps timer running</span>
+        </label>
         <div class="asset-panel">
           <div class="asset-row">
             <div>
@@ -155,6 +163,14 @@ function renderMainShell() {
           </div>
         </div>
       </section>
+
+      <section class="app-actions">
+        <p id="backgroundHint">Close hides the window. Use Quit to fully stop the app.</p>
+        <div class="app-action-row">
+          <button class="secondary" id="hideWindowButton" type="button">Hide</button>
+          <button class="danger" id="quitButton" type="button">Quit</button>
+        </div>
+      </section>
     </section>
   `;
 
@@ -175,6 +191,14 @@ function renderMainShell() {
   document.getElementById('testButton').addEventListener('click', async () => {
     currentState = await window.catBreak.test();
     updateMain(currentState);
+  });
+
+  document.getElementById('hideWindowButton').addEventListener('click', () => {
+    window.catBreak.hideWindow();
+  });
+
+  document.getElementById('quitButton').addEventListener('click', () => {
+    window.catBreak.quit();
   });
 
   document.getElementById('importWalkButton').addEventListener('click', async () => {
@@ -201,7 +225,7 @@ function renderMainShell() {
     document.getElementById(id).addEventListener('change', saveSettingsFromForm);
   }
 
-  for (const id of ['showOnAllDisplays', 'launchAtLogin']) {
+  for (const id of ['showOnAllDisplays', 'launchAtLogin', 'startMinimized', 'closeToTray']) {
     document.getElementById(id).addEventListener('change', saveSettingsFromForm);
   }
 }
@@ -211,12 +235,16 @@ async function saveSettingsFromForm() {
   const breakSeconds = Number(document.getElementById('breakSeconds').value);
   const showOnAllDisplays = document.getElementById('showOnAllDisplays').checked;
   const launchAtLogin = document.getElementById('launchAtLogin').checked;
+  const startMinimized = document.getElementById('startMinimized').checked;
+  const closeToTray = document.getElementById('closeToTray').checked;
 
   currentState = await window.catBreak.updateSettings({
     workMinutes,
     breakSeconds,
     showOnAllDisplays,
-    launchAtLogin
+    launchAtLogin,
+    startMinimized,
+    closeToTray
   });
   updateMain(currentState);
 }
@@ -232,6 +260,9 @@ function updateMain(state) {
   const breakSeconds = document.getElementById('breakSeconds');
   const showOnAllDisplays = document.getElementById('showOnAllDisplays');
   const launchAtLogin = document.getElementById('launchAtLogin');
+  const startMinimized = document.getElementById('startMinimized');
+  const closeToTray = document.getElementById('closeToTray');
+  const backgroundHint = document.getElementById('backgroundHint');
   const walkAssetName = document.getElementById('walkAssetName');
   const restAssetName = document.getElementById('restAssetName');
   const resetWalkButton = document.getElementById('resetWalkButton');
@@ -262,6 +293,11 @@ function updateMain(state) {
   }
   showOnAllDisplays.checked = state.settings.showOnAllDisplays;
   launchAtLogin.checked = state.settings.launchAtLogin;
+  startMinimized.checked = state.settings.startMinimized;
+  closeToTray.checked = state.settings.closeToTray;
+  backgroundHint.textContent = state.settings.closeToTray
+    ? 'Close hides the window. The timer keeps running from the menu bar/tray.'
+    : 'Close quits the app and stops the timer.';
   walkAssetName.textContent = state.catAssets.walk.name;
   restAssetName.textContent = state.catAssets.rest.name;
   resetWalkButton.disabled = !state.catAssets.walk.custom;
